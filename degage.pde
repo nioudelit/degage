@@ -11,7 +11,9 @@ PImage[] anim = new PImage[3];
 int val;
 
 void setup() {
+  //fullScreen(P2D);
   size(640, 420);
+  background(0);
   minim = new Minim(this);
   voix = minim.loadFile("voix.wav", 2048);
 
@@ -57,23 +59,6 @@ void affichage() {
   }
 }
 
-  void keyReleased() {
-    voix.play(1);
-  }
-
-  void connexion() {
-    while (myPort.available() > 0) {
-      String data = myPort.readStringUntil('\n');
-      if (data != null) {
-        String valeurs[] = splitTokens(data, "$ \n \r \t ");
-        if (valeurs.length < 8) {
-          for (int i = 0; i < 7; i++) {
-            valeurs = append(valeurs, "0");
-          }
-        }
-        //println("Nombres données?  " + valeurs.length);
-      }
-    }
-  }
-
-  //10627
+void keyReleased() {
+  voix.play(1);
+}
