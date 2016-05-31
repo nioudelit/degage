@@ -4,25 +4,34 @@ import ddf.minim.effects.*;
 import processing.serial.*;
 
 Minim minim;
-AudioPlayer voix;
+int nbrExtraits = 16;
+AudioPlayer[] voix = new AudioPlayer[nbrExtraits];
+AudioPlayer fond;
 Serial myPort;
 
 PImage[] anim = new PImage[3];
-int val;
+int val; //<=60 && <1.20, 1.20, 2
+int curseur;
+int distanceMax = 200; //EN CENTIMETRES
+int distanceMin = 7;
+boolean defensive = true;
 
 void setup() {
   //fullScreen(P2D);
   size(640, 420);
   background(0);
+  //SON
   minim = new Minim(this);
-  voix = minim.loadFile("voix.wav", 2048);
-
-  String portName = Serial.list()[4];
+  for (int i = 0; i < voix.length; i++) {
+    voix[i] = minim.loadFile( i + ".wav", 2048);
+  }
+  //SERIAL
   for (int i = 0; i < Serial.list().length; i++) {
     println(i + "     " + Serial.list()[i]);
   }
+  String portName = Serial.list()[4];
   myPort = new Serial(this, portName, 9600);
-
+  //IMAGE
   for (int i = 0; i < anim.length; i++) {
     anim[i] = loadImage(i + ".jpg");
   }
@@ -34,31 +43,36 @@ void draw() {
 }
 
 void arduino() {
-  if ( myPort.available() > 0) {  // If data is available,
+  if (myPort.available() > 0) {  // If data is available,
     val = myPort.read();         // read it and store it in val
-    //String data = myPort.readStringUntil('\n');
     println(val);
-    //println(data);
   }
 }
 
 void affichage() {
-  if (val < 90 && voix.isPlaying() == false) {
-    voix.play(1);
+  println(defensive + " " + val + "   CURSEUR   " + curseur);
+  if (val < distanceMax && val > distanceMin && voix[curseur].isPlaying() == false) {
+    defensive = true;
+    curseur = int(map(val, distanceMin, distanceMax, nbrExtraits-1, 0));
+  } else {
+    defensive = false;
+  }
+  if (voix[curseur].isPlaying() == false && defensive == true) {
+    voix[curseur].play(1);
   } else {
     image(anim[0], 0, 0);
   }
-  if (voix.position() > 1 && voix.position() < voix.bufferSize()-1 && voix.isPlaying()) {
-    if (voix.left.get(voix.position()-1) >= -0.01 && voix.left.get(voix.position()-1) < 0.2) {
-      image(anim[1], 0, 0);
-    } else if (voix.left.get(voix.position()-1) >= 0.2) {
-      image(anim[2], 0, 0);
-    } else {
-      image(anim[0], 0, 0);
-    }
-  }
+  animationBouche();
 }
 
-void keyReleased() {
-  voix.play(1);
+void animationBouche() {
+  int choix = 0;
+  if (voix[curseur].isPlaying()) {
+    for(int i = 0; i < voix[curseur].bufferSize()-1; i++){
+       choix = int(map(voix[curseur].left.get(i), -0.99, 1, 0, 2));
+    }
+    image(anim[choix], 0, 0);
+  } else {
+    image(anim[0], 0, 0);
+  }
 }
